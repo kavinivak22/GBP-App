@@ -122,24 +122,40 @@
     }
 
     .nav-container {
-      max-width: 100%; /* Use 100% now that nav has margin */
+      max-width: 100%;
       margin: 0 auto;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+      justify-content: center; /* Center links on one line */
+      flex-wrap: nowrap; /* Prevent wrapping */
+      overflow-x: auto; /* Enable horizontal scrolling if content overflows */
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      padding: 0 10px; /* Add some horizontal padding for scrollable content */
+    }
+
+    .nav-container::-webkit-scrollbar {
+      height: 4px; /* Thin scrollbar */
+    }
+
+    .nav-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3); /* Transparent thumb */
+      border-radius: 5px;
+    }
+
+    .nav-container::-webkit-scrollbar-track {
+      background: transparent; /* Transparent track */
     }
 
     .nav-link {
       color: var(--white); /* White text for contrast on dark background */
       text-decoration: none;
       padding: 10px 15px; /* Keep content padding consistent */
-      margin: 5px;
+      margin: 5px; /* Keep consistent margin between links */
       border-radius: 8px;
       font-family: 'Raleway', sans-serif;
       font-weight: 600;
       transition: background-color 0.3s ease, transform 0.2s ease;
-      font-size: 0.95em;
+      font-size: 0.95em; /* Keep font size consistent */
+      white-space: nowrap; /* Prevent text inside link from wrapping */
     }
 
     .nav-link:hover {
@@ -270,6 +286,10 @@
         margin: -40px auto 30px auto; /* More negative margin for desktop, adjusted bottom margin */
         padding: 10px 0; /* Fixed smaller padding for desktop */
       }
+      
+      .nav-container {
+        overflow-x: hidden; /* Hide scrollbar on larger screens */
+      }
 
       .section {
         margin: 30px auto;
@@ -324,7 +344,7 @@
   <section class="section" id="enquiries">
     <h2>Enquiries</h2>
     <div class="button-grid">
-      <button onclick="window.location.href='https://kavinivak22.github.io/GBP-Site-Enquiry/'">
+      <button onclick="window.location.href='https://script.google.com/macros/s/AKfycbxObuSBQ5sSBTLnhnPnPVJCoyHbvlDd-Zwir9oWUvTuDn8io0mS_YirdEdf2h5TxN8HaA/exec?page=form'">
         <i class="fas fa-pencil-alt"></i> Enquiry Entry
       </button>
       <button onclick="window.location.href='https://lookerstudio.google.com/s/lanUc5G9saM'">
