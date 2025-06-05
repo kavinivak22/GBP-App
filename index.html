@@ -125,11 +125,12 @@
       max-width: 100%;
       margin: 0 auto;
       display: flex;
-      justify-content: center; /* Center links on one line */
+      justify-content: flex-start; /* Aligns items to the start (left) */
       flex-wrap: nowrap; /* Prevent wrapping */
       overflow-x: auto; /* Enable horizontal scrolling if content overflows */
       -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-      padding: 0 10px; /* Add some horizontal padding for scrollable content */
+      padding: 0 20px; /* Increased horizontal padding */
+      gap: 15px; /* Spacing between nav links */
     }
 
     .nav-container::-webkit-scrollbar {
@@ -149,7 +150,7 @@
       color: var(--white); /* White text for contrast on dark background */
       text-decoration: none;
       padding: 10px 15px; /* Keep content padding consistent */
-      margin: 5px; /* Keep consistent margin between links */
+      margin: 0; /* Removed individual horizontal margins, handled by gap */
       border-radius: 8px;
       font-family: 'Raleway', sans-serif;
       font-weight: 600;
@@ -289,6 +290,8 @@
       
       .nav-container {
         overflow-x: hidden; /* Hide scrollbar on larger screens */
+        padding: 0; /* No horizontal padding needed on desktop if centered naturally */
+        justify-content: center; /* Center on desktop */
       }
 
       .section {
