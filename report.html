@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Data Explorer with AI Analysis</title>
+
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- DataTables CSS for beautiful tables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        /* Using a more modern font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        :root {
+            --bg-light: #f1f5f9; /* slate-100 */
+            --card-bg: rgba(255, 255, 255, 0.7); /* white with transparency */
+            --border-color: #e2e8f0; /* slate-200 */
+            --accent-color: #2563eb; /* blue-600 */
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-primary: #1e293b; /* slate-800 */
+            --text-secondary: #475569; /* slate-600 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            background-image: radial-gradient(circle at 1px 1px, rgba(107, 114, 128, 0.1) 1px, transparent 0);
+            background-size: 2rem 2rem;
+        }
+        
+        /* Glassmorphism Card Effect for Light Mode */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-glow);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        
+        /* Custom styles for DataTables (Light Theme) */
+        .dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate .paginate_button {
+            color: var(--text-primary) !important;
+        }
+
+        .dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        table.dataTable {
+            border-color: var(--border-color);
+        }
+
+        table.dataTable thead th {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        table.dataTable tbody tr {
+            background-color: transparent;
+        }
+
+        table.dataTable tbody td {
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border: 1px solid var(--border-color);
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        table.dataTable td.dt-body-right {
+            text-align: right;
+        }
+
+        /* Loading Spinner */
+        #loader {
+            border: 8px solid var(--border-color);
+            border-top: 8px solid var(--accent-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1.5s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Fade-in animation for content */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #app-content.loaded {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        /* Gemini Modal & Chat Styles */
+        #gemini-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #gemini-modal-overlay.visible {
+            opacity: 1; visibility: visible;
+        }
+        #gemini-modal {
+            max-width: 600px;
+            width: 90%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        #gemini-modal-overlay.visible #gemini-modal {
+            transform: scale(1);
+        }
+        #chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: var(--accent-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.125rem;
+        }
+        .model-message {
+            background-color: #e2e8f0;
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 0.125rem;
+        }
+         #chat-input-form {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        #chat-input {
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            outline: none;
+        }
+        #chat-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        #chat-send-button {
+            border-radius: 9999px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+        }
+        #chat-send-button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div id="loader"></div>
+
+    <div id="app-content" class="max-w-7xl mx-auto opacity-0">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 id="main-header" class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-700 pb-2">Data Report</h1>
+        </header>
+
+        <main>
+            <!-- Data Summary Section -->
+            <section id="summary-section" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="card p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-500 text-sm">Total Entries</p>
+                        <p id="total-entries" class="text-2xl sm:text-3xl font-bold text-slate-800">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    </div>
+                </div>
+                <div class="card p-6 flex items-center justify-between">
+                    <div>
+                        <p id="total-amount-label" class="text-slate-500 text-sm">Total</p>
+                         <p id="total-amount" class="text-2xl sm:text-3xl font-bold text-slate-800">0.00</p>
+                    </div>
+                     <div class="bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filters Section -->
+            <section id="filters-section" class="card mb-8 p-6">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-semibold text-slate-800">Filters</h2>
+                    <button id="gemini-analysis-button" class="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg>
+                        <span>Analyze ✨</span>
+                    </button>
+                </div>
+                <div id="filter-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <!-- Dynamic filters will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Data Table Section -->
+            <section id="table-section" class="card p-6">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-semibold text-slate-800">Full Data Set</h2>
+                    <button id="download-pdf-button" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download PDF</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="dataTable" class="display" style="width:100%">
+                        <!-- Table will be populated by DataTables -->
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Gemini Modal -->
+    <div id="gemini-modal-overlay">
+        <div id="gemini-modal" class="card p-0">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg>
+                    <span>AI Data Analyst</span>
+                </h3>
+                <button id="gemini-modal-close" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button>
+            </div>
+            <div id="chat-history"></div>
+            <form id="chat-input-form">
+                <input type="text" id="chat-input" placeholder="Ask about your data..." autocomplete="off">
+                <button type="submit" id="chat-send-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Core Libraries -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+
+    <!-- Application Logic -->
+    <script>
+        dayjs.extend(dayjs_plugin_customParseFormat);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ===================================================================
+            // CONFIGURATION: Edit these two variables with your own details.
+            // ===================================================================
+            const GATEWAY_URL = 'https://script.google.com/macros/s/AKfycbxoydhW9pacciwp8UDSCVmHqCGr_VkN1eniYa6FpqO0VXeLVqSdPPw8pdRgC0zz3pNx/exec';
+            const GEMINI_API_KEY = 'AIzaSyAIAYXTqPFylXxJxcNP3pu442jEO0GMQOg'; 
+            // ===================================================================
+
+            let originalData = [];
+            let dataTableInstance;
+            let chatHistory = [];
+            let currentDataSampleForAI = "";
+
+            const loader = document.getElementById('loader');
+            const appContent = document.getElementById('app-content');
+            const geminiModalOverlay = document.getElementById('gemini-modal-overlay');
+            const geminiModalClose = document.getElementById('gemini-modal-close');
+            const geminiAnalysisButton = document.getElementById('gemini-analysis-button');
+            const downloadPdfButton = document.getElementById('download-pdf-button');
+            const chatHistoryContainer = document.getElementById('chat-history');
+            const chatInputForm = document.getElementById('chat-input-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatSendButton = document.getElementById('chat-send-button');
+
+            function findHeader(headers, keywords) {
+                const lowerCaseKeywords = keywords.map(k => k.toLowerCase());
+                return headers.find(header => 
+                    lowerCaseKeywords.some(keyword => header.toLowerCase().includes(keyword))
+                );
+            }
+
+            async function fetchData() {
+                const params = new URLSearchParams(window.location.search);
+                const sheetId = params.get('sheetId');
+                // **NEW:** Get the gid from the URL as well
+                const gid = params.get('gid');
+
+                if (!sheetId) {
+                    const container = loader.parentElement;
+                    container.innerHTML = `<div class="text-center p-6 bg-red-100 text-red-800 rounded-lg"><strong>Error:</strong> No Google Sheet ID was provided in the URL. Please add <strong>?sheetId=YOUR_SHEET_ID</strong> to the end of the URL.</div>`;
+                    return;
+                }
+
+                // **NEW:** Construct the full URL with both sheetId and optional gid
+                let fullUrl = `${GATEWAY_URL}?sheetId=${sheetId}`;
+                if (gid) {
+                    fullUrl += `&gid=${gid}`;
+                }
+
+                try {
+                    const response = await fetch(fullUrl);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const jsonData = await response.json();
+                    
+                    if (jsonData.error) {
+                         throw new Error(jsonData.error);
+                    }
+                    
+                    originalData = jsonData;
+                    
+                    initializeApp(originalData);
+
+                } catch (error) {
+                    console.error("Error fetching or parsing data:", error);
+                    let errorMessage = `Failed to load data. Please check the sheet ID and ensure it has been shared with the script owner. Error: ${error.message}`;
+                    const container = loader.parentElement;
+                    container.innerHTML = `<div class="max-w-7xl mx-auto text-center p-6 bg-red-100 border border-red-300 text-red-800 rounded-lg shadow-md">${errorMessage}</div>`;
+                }
+            }
+            
+            function initializeApp(data) {
+                if (!data || data.length === 0) {
+                    loader.parentElement.innerHTML = `<div class="text-center text-amber-500">No data found in the sheet.</div>`;
+                    return;
+                }
+                const headers = Object.keys(data[0]);
+                
+                generateFilters(data, headers);
+                initializeDataTable(data, headers);
+                updateSummary(data);
+
+                loader.style.display = 'none';
+                appContent.classList.remove('opacity-0');
+                appContent.classList.add('loaded');
+            }
+
+            function generateFilters(data, headers) {
+                const filterContainer = document.getElementById('filter-container');
+                filterContainer.innerHTML = ''; 
+
+                headers.forEach(header => {
+                    const uniqueValues = [...new Set(data.map(item => item[header]))].filter(Boolean);
+                    const isGoodForFilter = uniqueValues.length > 1 && uniqueValues.length <= 15 && typeof data[0][header] === 'string';
+
+                    if (isGoodForFilter) {
+                        const label = document.createElement('label');
+                        label.className = "block text-sm font-medium text-slate-600 mb-1";
+                        label.textContent = header;
+
+                        const select = document.createElement('select');
+                        select.dataset.column = header;
+                        select.className = "filter-select w-full p-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-slate-800";
+                        select.innerHTML = `<option value="">All</option>` + uniqueValues.sort().map(v => `<option value="${v}">${v}</option>`).join('');
+
+                        const wrapper = document.createElement('div');
+                        wrapper.appendChild(label);
+                        wrapper.appendChild(select);
+                        filterContainer.appendChild(wrapper);
+                    }
+                });
+                
+                document.querySelectorAll('.filter-select').forEach(select => {
+                    select.addEventListener('change', applyFilters);
+                });
+            }
+
+            function initializeDataTable(data, headers) {
+                const columns = headers.map(header => {
+                    const columnDef = {
+                        title: header,
+                        data: header,
+                        defaultContent: ""
+                    };
+
+                    if (header.toLowerCase().includes('date') || header.toLowerCase().includes('release')) {
+                        columnDef.render = function(data, type, row, meta) {
+                            const dateValue = row[header];
+                            if (!dateValue) return '';
+                            const originalStr = String(dateValue).trim();
+                            if (type === 'sort' || type === 'type') {
+                                const dateObj = dayjs(originalStr, 'DD/MM/YYYY');
+                                return dateObj.isValid() ? dateObj.format('YYYYMMDD') : 0;
+                            }
+                            const dateObj = dayjs(originalStr, 'DD/MM/YYYY');
+                            return dateObj.isValid() ? dateObj.format('DD MMM YYYY') : originalStr;
+                        };
+                    }
+
+                    if (header.toLowerCase().includes('amount') || header.toLowerCase().includes('cost') || header.toLowerCase().includes('price')) {
+                         columnDef.render = function(data, type, row, meta) {
+                            const numValue = parseFloat(String(row[header]).replace(/[^0-9.-]+/g, ""));
+                            if (isNaN(numValue)) return row[header];
+                            return numValue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+                         };
+                         columnDef.className = 'dt-body-right';
+                    }
+                    
+                    return columnDef;
+                });
+
+                if (dataTableInstance) {
+                    dataTableInstance.destroy();
+                    $('#dataTable').empty();
+                }
+
+                dataTableInstance = $('#dataTable').DataTable({
+                    data: data,
+                    columns: columns,
+                    responsive: true,
+                    pageLength: 10,
+                    lengthMenu: [10, 25, 50, 100],
+                    destroy: true,
+                    language: {
+                        search: "_INPUT_",
+                        searchPlaceholder: "Search records..."
+                    }
+                });
+            }
+
+            function applyFilters() {
+                let filteredData = [...originalData];
+                document.querySelectorAll('.filter-select').forEach(select => {
+                    const column = select.dataset.column;
+                    const value = select.value;
+                    if (value) {
+                        filteredData = filteredData.filter(row => row[column] == value);
+                    }
+                });
+                
+                dataTableInstance.clear().rows.add(filteredData).draw();
+                updateSummary(filteredData);
+            }
+
+            function updateSummary(data) {
+                const totalEntries = data.length;
+                const headers = originalData.length > 0 ? Object.keys(originalData[0]) : [];
+                const amountKey = findHeader(headers, ['amount', 'cost', 'price']);
+                
+                const totalAmountLabel = document.getElementById('total-amount-label');
+                const totalAmountEl = document.getElementById('total-amount');
+
+                if (amountKey) {
+                    const totalAmount = data.reduce((sum, row) => {
+                        const cleanValue = parseFloat(String(row[amountKey]).replace(/[^0-9.-]+/g, ""));
+                        return sum + (isNaN(cleanValue) ? 0 : cleanValue);
+                    }, 0);
+                    
+                    totalAmountLabel.textContent = `Total ${amountKey}`;
+                    totalAmountEl.textContent = totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+                    totalAmountEl.parentElement.parentElement.style.display = '';
+                } else {
+                    totalAmountEl.parentElement.parentElement.style.display = 'none';
+                }
+
+                document.getElementById('total-entries').textContent = totalEntries.toLocaleString('en-IN');
+            }
+            
+            downloadPdfButton.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const filteredData = dataTableInstance.rows({ search: 'applied' }).data().toArray();
+                const headers = Object.keys(originalData[0] || {});
+
+                const tableColumns = dataTableInstance.columns().header().toArray().map(th => $(th).text());
+                const tableRows = [];
+
+                filteredData.forEach(item => {
+                    const rowData = tableColumns.map(colName => {
+                        if (colName.toLowerCase().includes('date')) {
+                             const dateObj = dayjs(String(item[colName]).trim(), 'DD/MM/YYYY');
+                             return dateObj.isValid() ? dateObj.format('DD MMM YYYY') : item[colName];
+                        }
+                        if (colName.toLowerCase().includes('amount')) {
+                            const numValue = parseFloat(String(item[colName]).replace(/[^0-9.-]+/g, ""));
+                            return isNaN(numValue) ? item[colName] : numValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                        return item[colName] || '';
+                    });
+                    tableRows.push(rowData);
+                });
+
+                let activeFiltersList = [];
+                document.querySelectorAll('.filter-select').forEach(select => {
+                    if (select.value) {
+                        activeFiltersList.push(`${select.dataset.column}: '${select.value}'`);
+                    }
+                });
+
+                let reportTitle = activeFiltersList.length === 0 
+                    ? "Complete Data Report" 
+                    : "Report for " + activeFiltersList.join(', ');
+
+                doc.setFontSize(18);
+                doc.text(reportTitle, 14, 22);
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 29);
+
+                const amountKey = findHeader(headers, ['amount', 'cost', 'price']);
+                if(amountKey) {
+                    const totalAmount = filteredData.reduce((sum, row) => sum + (parseFloat(String(row[amountKey]).replace(/[^0-9.-]+/g, "")) || 0), 0);
+                    const formattedTotal = totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    
+                    const amountColumnIndex = tableColumns.findIndex(col => col.toLowerCase().includes('amount'));
+                    const totalColSpan = amountColumnIndex >= 0 ? amountColumnIndex : tableColumns.length - 1;
+
+                    doc.autoTable({
+                        head: [tableColumns], body: tableRows, startY: 35, theme: 'striped', headStyles: { fillColor: [41, 128, 185] },
+                        columnStyles: { [amountColumnIndex]: { halign: 'right' } },
+                        foot: [[{ content: `Total ${amountKey}:`, colSpan: totalColSpan, styles: { halign: 'right', fontStyle: 'bold' } }, { content: formattedTotal, styles: { halign: 'right', fontStyle: 'bold' } }]],
+                        footStyles: { fillColor: [234, 236, 240], textColor: [0, 0, 0] }
+                    });
+                } else {
+                    doc.autoTable({ head: [tableColumns], body: tableRows, startY: 35, theme: 'striped', headStyles: { fillColor: [41, 128, 185] } });
+                }
+
+                doc.save('data-report.pdf');
+            });
+
+            // --- Gemini AI Chat Feature ---
+
+            function addMessageToChat(message, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${sender}-message`;
+                messageDiv.textContent = message;
+                chatHistoryContainer.appendChild(messageDiv);
+                chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+            }
+
+            async function getGeminiChatResponse() {
+                chatSendButton.disabled = true;
+                addMessageToChat("Thinking...", "model"); 
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const systemPrompt = {
+                    role: "user",
+                    parts: [{ text: `You are a helpful and concise data analyst. The user has provided a dataset. Here is the JSON data: ${currentDataSampleForAI}. Based ONLY on this data, answer the user's questions.` }]
+                };
+                
+                const apiHistory = [systemPrompt, ...chatHistory];
+
+                const payload = { contents: apiHistory };
+
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API error! status: ${response.status}`);
+                    const result = await response.json();
+                    const aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    chatHistoryContainer.removeChild(chatHistoryContainer.lastChild);
+
+                    if (aiResponse) {
+                        addMessageToChat(aiResponse, "model");
+                        chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                    } else {
+                        addMessageToChat("Sorry, I couldn't get a response. Please try again.", "model");
+                    }
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    chatHistoryContainer.removeChild(chatHistoryContainer.lastChild);
+                    addMessageToChat("An error occurred. Please check the console for details.", "model");
+                } finally {
+                    chatSendButton.disabled = false;
+                    chatInput.focus();
+                }
+            }
+            
+            geminiAnalysisButton.addEventListener('click', () => {
+                const filteredData = dataTableInstance.rows({ search: 'applied' }).data().toArray();
+                if (filteredData.length === 0) {
+                    chatHistoryContainer.innerHTML = '';
+                    addMessageToChat("No data available for analysis. Please apply different filters or clear your search to continue.", "model");
+                    showGeminiModal();
+                    return;
+                }
+                
+                currentDataSampleForAI = JSON.stringify(filteredData);
+                chatHistory = [];
+                chatHistoryContainer.innerHTML = '';
+                const initialMessage = `Hello! I'm your AI data analyst. I've loaded all ${filteredData.length} rows of your filtered data. How can I help you analyze it?`;
+                addMessageToChat(initialMessage, "model");
+                showGeminiModal();
+            });
+
+            chatInputForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userMessage = chatInput.value.trim();
+                if (userMessage) {
+                    addMessageToChat(userMessage, "user");
+                    chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+                    chatInput.value = '';
+                    getGeminiChatResponse();
+                }
+            });
+
+            function showGeminiModal() { geminiModalOverlay.classList.add('visible'); }
+            function hideGeminiModal() { geminiModalOverlay.classList.remove('visible'); }
+
+            geminiModalClose.addEventListener('click', hideGeminiModal);
+            geminiModalOverlay.addEventListener('click', (e) => {
+                if (e.target === geminiModalOverlay) {
+                    hideGeminiModal();
+                }
+            });
+
+            fetchData();
+        });
+    </script>
+</body>
+</html>
+
