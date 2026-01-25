@@ -1,0 +1,5 @@
+{
+  "name": "Site Reports Dashboard",
+  "description": "A comprehensive reporting dashboard for Worklogs, TeaLogs, Material Logs, and Site Enquiry Logs utilizing Google Sheets data.",
+  "requestFramePermissions": []
+}
