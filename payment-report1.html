@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report</title>
+    <title>Futuristic Data Grid with AI Analysis</title>
 
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,10 +11,13 @@
     <!-- DataTables CSS for beautiful tables -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     
+    <!-- Flatpickr CSS for Date Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
     <!-- Custom Styles -->
     <style>
         /* Using a more modern font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         :root {
             --bg-light: #f1f5f9; /* slate-100 */
@@ -34,7 +37,7 @@
             background-size: 2rem 2rem;
         }
         
-        /* Glassmorphism Card Effect for Light Mode */
+        /* Glassmorphism Card Effect */
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(10px);
@@ -49,59 +52,85 @@
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         }
         
-        /* Custom styles for DataTables (Light Theme) */
-        .dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate .paginate_button {
-            color: var(--text-primary) !important;
-        }
-
+        /* Custom styles for DataTables */
         .dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input {
             background-color: #ffffff;
             border: 1px solid var(--border-color);
             border-radius: 0.375rem;
             padding: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_filter input:focus {
+            color: var(--text-primary);
             outline: none;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
-        
-        table.dataTable {
-            border-color: var(--border-color);
-        }
-
         table.dataTable thead th {
             color: var(--text-primary);
             border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
         }
-        
         table.dataTable tbody tr {
             background-color: transparent;
+            cursor: pointer; /* Indicate clickable rows */
+            transition: background-color 0.2s;
         }
-
-        table.dataTable tbody td {
-            color: var(--text-secondary);
-            border-color: var(--border-color);
-        }
-
         table.dataTable tbody tr:hover {
-            background-color: rgba(59, 130, 246, 0.05);
+            background-color: rgba(59, 130, 246, 0.05) !important;
         }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            border: 1px solid var(--border-color);
-        }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: var(--accent-color) !important;
-            border-color: var(--accent-color) !important;
-            color: white !important;
-        }
-        
         table.dataTable td.dt-body-right {
             text-align: right;
         }
 
+        /* Responsive DataTables overrides for Mobile */
+        @media (max-width: 640px) {
+            .dataTables_wrapper .dataTables_length, 
+            .dataTables_wrapper .dataTables_filter {
+                float: none;
+                text-align: left;
+                margin-bottom: 0.5rem;
+            }
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+
+        /* Smart Date Filter Buttons */
+        .date-quick-btn {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .date-quick-btn:hover {
+            background-color: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+        .date-quick-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* Flatpickr Customization */
+        .flatpickr-calendar {
+            font-family: 'Inter', sans-serif;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
         /* Loading Spinner */
         #loader {
             border: 8px solid var(--border-color);
@@ -120,7 +149,7 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Fade-in animation for content */
+        /* Fade-in animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -129,8 +158,8 @@
             animation: fadeIn 0.8s ease-out forwards;
         }
         
-        /* Gemini Modal & Chat Styles */
-        #gemini-modal-overlay {
+        /* Modal Common Styles */
+        .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(0, 0, 0, 0.5);
@@ -140,22 +169,29 @@
             z-index: 1000;
             opacity: 0; visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(4px);
+            padding: 1rem;
         }
-        #gemini-modal-overlay.visible {
+        .modal-overlay.visible {
             opacity: 1; visibility: visible;
         }
-        #gemini-modal {
-            max-width: 600px;
-            width: 90%;
-            height: 80vh;
+        .modal-container {
+            background: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
             transform: scale(0.95);
             transition: transform 0.3s ease;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255,255,255,0.5);
         }
-        #gemini-modal-overlay.visible #gemini-modal {
+        .modal-overlay.visible .modal-container {
             transform: scale(1);
         }
+        
+        /* Chat UI Specifics */
         #chat-history {
             flex-grow: 1;
             overflow-y: auto;
@@ -163,141 +199,172 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            background-color: #f8fafc;
         }
         .chat-message {
             padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            max-width: 80%;
+            border-radius: 1rem;
+            max-width: 85%;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .user-message {
             background-color: var(--accent-color);
             color: white;
             align-self: flex-end;
-            border-bottom-right-radius: 0.125rem;
+            border-bottom-right-radius: 0.25rem;
         }
         .model-message {
-            background-color: #e2e8f0;
+            background-color: white;
             color: var(--text-primary);
             align-self: flex-start;
-            border-bottom-left-radius: 0.125rem;
-        }
-         #chat-input-form {
-            display: flex;
-            gap: 0.5rem;
-            padding: 1rem;
-            border-top: 1px solid var(--border-color);
-        }
-        #chat-input {
-            flex-grow: 1;
+            border-bottom-left-radius: 0.25rem;
             border: 1px solid var(--border-color);
-            border-radius: 9999px;
-            padding: 0.5rem 1rem;
-            outline: none;
         }
-        #chat-input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
-        #chat-send-button {
-            border-radius: 9999px;
-            background-color: var(--accent-color);
-            color: white;
-            padding: 0.5rem 1rem;
+
+        /* Detail Modal Specifics */
+        .detail-item {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            cursor: pointer;
+            flex-direction: column;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0.75rem;
         }
-        #chat-send-button:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .detail-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .detail-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            word-break: break-word;
         }
 
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="p-3 sm:p-8">
 
     <div id="loader"></div>
 
-    <div id="app-content" class="max-w-7xl mx-auto opacity-0">
+    <div id="app-content" class="max-w-7xl mx-auto opacity-0 pb-10">
         <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-700 pb-2">Payment Report</h1>
+        <header class="mb-6 sm:mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-700 pb-2">Payment Report</h1>
         </header>
 
         <main>
             <!-- Data Summary Section -->
-            <section id="summary-section" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="card p-6 flex items-center justify-between">
+            <section id="summary-section" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div class="card p-5 sm:p-6 flex items-center justify-between">
                     <div>
-                        <p class="text-slate-500 text-sm">Total Entries</p>
-                        <p id="total-entries" class="text-2xl sm:text-3xl font-bold text-slate-800">0</p>
+                        <p class="text-slate-500 text-sm font-medium">Total Entries</p>
+                        <p id="total-entries" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">0</p>
                     </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    <div class="bg-blue-100 p-3 rounded-full shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                     </div>
                 </div>
-                <div class="card p-6 flex items-center justify-between">
+                <div class="card p-5 sm:p-6 flex items-center justify-between">
                     <div>
-                        <p class="text-slate-500 text-sm">Total Amount</p>
-                         <p id="total-amount" class="text-2xl sm:text-3xl font-bold text-slate-800">₹0.00</p>
+                        <p class="text-slate-500 text-sm font-medium">Total Amount</p>
+                        <p id="total-amount" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">₹0.00</p>
                     </div>
-                     <div class="bg-green-100 p-3 rounded-full">
+                     <div class="bg-green-100 p-3 rounded-full shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
                 </div>
             </section>
 
             <!-- Filters Section -->
-            <section id="filters-section" class="card mb-8 p-6">
-                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
-                    <h2 class="text-2xl font-semibold text-slate-800">Filters</h2>
-                    <button id="gemini-analysis-button" class="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg>
-                        <span>Analyze ✨</span>
+            <section id="filters-section" class="card mb-6 sm:mb-8 p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-slate-800">Filters</h2>
+                    <button id="gemini-analysis-button" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg>
+                        <span>AI Analysis</span>
                     </button>
                 </div>
-                <div id="filter-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div id="filter-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Dynamic filters will be inserted here -->
                 </div>
             </section>
 
             <!-- Data Table Section -->
-            <section id="table-section" class="card p-6">
-                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
-                    <h2 class="text-2xl font-semibold text-slate-800">Full Data Set</h2>
-                    <button id="download-pdf-button" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <section id="table-section" class="card p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-slate-800">Records</h2>
+                    <button id="download-pdf-button" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <span>Download PDF</span>
                     </button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table id="dataTable" class="display" style="width:100%">
+                <div class="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
+                    <table id="dataTable" class="display w-full text-sm sm:text-base" style="width:100%">
                         <!-- Table will be populated by DataTables -->
                     </table>
                 </div>
+                <p class="mt-4 text-xs text-slate-400 text-center sm:text-left italic">
+                    Tip: Click on any row to view full details.
+                </p>
             </section>
         </main>
     </div>
     
     <!-- Gemini Modal -->
-    <div id="gemini-modal-overlay">
-        <div id="gemini-modal" class="card p-0">
-            <div class="flex justify-between items-center p-4 border-b border-slate-200">
-                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg>
+    <div id="gemini-modal-overlay" class="modal-overlay">
+        <div id="gemini-modal" class="modal-container max-w-2xl h-[80vh]">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50/50 rounded-t-2xl">
+                <h3 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-1 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9Z"></path><path d="M20.5 13.5c-2.4-2.4-4.2-3-6.5-3s-4.1.6-6.5 3"></path><path d="m14 10-2-2-2 2"></path></svg></span>
                     <span>AI Data Analyst</span>
                 </h3>
-                <button id="gemini-modal-close" class="text-slate-400 hover:text-slate-600 text-3xl leading-none">&times;</button>
+                <button id="gemini-modal-close" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <div id="chat-history"></div>
-            <form id="chat-input-form">
-                <input type="text" id="chat-input" placeholder="Ask about your data..." autocomplete="off">
-                <button type="submit" id="chat-send-button">
+            <form id="chat-input-form" class="p-4 border-t border-slate-200 flex gap-2">
+                <input type="text" id="chat-input" class="flex-1 border border-slate-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Ask about your data..." autocomplete="off">
+                <button type="submit" id="chat-send-button" class="bg-indigo-600 text-white p-2 sm:px-4 rounded-full hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- Detail View Modal -->
+    <div id="detail-modal-overlay" class="modal-overlay">
+        <div id="detail-modal" class="modal-container max-w-md max-h-[90vh]">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50/50 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="bg-blue-100 text-blue-600 p-1.5 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </span>
+                    Transaction Details
+                </h3>
+                <button id="detail-modal-close" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="detail-modal-content" class="p-6 overflow-y-auto">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50/50 rounded-b-2xl flex justify-end">
+                <button id="detail-modal-close-btn" class="bg-white border border-slate-300 text-slate-700 font-medium py-2 px-4 rounded-lg hover:bg-slate-50 transition-colors">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -308,6 +375,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
@@ -318,20 +388,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             
-            // ===================================================================
-            // CONFIGURATION: Edit these two variables with your own details.
-            // ===================================================================
-
-            // 1. Paste the URL of the Apps Script Web App you deployed.
-            const GATEWAY_URL = 'https://script.google.com/macros/s/AKfycbxoydhW9pacciwp8UDSCVmHqCGr_VkN1eniYa6FpqO0VXeLVqSdPPw8pdRgC0zz3pNx/exec';
-            
-            // 2. Paste your API Key from Google AI Studio.
-            const GEMINI_API_KEY = 'AIzaSyAIAYXTqPFylXxJxcNP3pu442jEO0GMQOg';
-
-            // ===================================================================
-            // END OF CONFIGURATION
-            // ===================================================================
-
+            const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRqSGr3ZIyDnXYh6_i4bFejI8MwAtJBZkAN3IVIuB9VR-zGhMPJXtSxpQNTQcQL_aUmH-m-H6JtiZAt/pub?gid=364767603&single=true&output=csv';
 
             let originalData = [];
             let dataTableInstance;
@@ -340,15 +397,23 @@
 
             const loader = document.getElementById('loader');
             const appContent = document.getElementById('app-content');
+            
+            // Gemini Modal Elements
             const geminiModalOverlay = document.getElementById('gemini-modal-overlay');
             const geminiModalClose = document.getElementById('gemini-modal-close');
             const geminiAnalysisButton = document.getElementById('gemini-analysis-button');
-            const downloadPdfButton = document.getElementById('download-pdf-button');
-
             const chatHistoryContainer = document.getElementById('chat-history');
             const chatInputForm = document.getElementById('chat-input-form');
             const chatInput = document.getElementById('chat-input');
             const chatSendButton = document.getElementById('chat-send-button');
+
+            // Detail Modal Elements
+            const detailModalOverlay = document.getElementById('detail-modal-overlay');
+            const detailModalClose = document.getElementById('detail-modal-close');
+            const detailModalCloseBtn = document.getElementById('detail-modal-close-btn');
+            const detailModalContent = document.getElementById('detail-modal-content');
+
+            const downloadPdfButton = document.getElementById('download-pdf-button');
 
             function findHeader(headers, keywords) {
                 const lowerCaseKeywords = keywords.map(k => k.toLowerCase());
@@ -358,43 +423,39 @@
             }
 
             async function fetchData() {
-                const params = new URLSearchParams(window.location.search);
-                const sheetId = params.get('sheetId');
-
-                if (!sheetId) {
-                    const container = loader.parentElement;
-                    container.innerHTML = `<div class="text-center p-6 bg-red-100 text-red-800 rounded-lg"><strong>Error:</strong> No Google Sheet ID was provided in the URL. Please add <strong>?sheetId=YOUR_SHEET_ID</strong> to the end of the URL.</div>`;
-                    return;
-                }
-
-                const fullUrl = `${GATEWAY_URL}?sheetId=${sheetId}`;
-
                 try {
-                    const response = await fetch(fullUrl);
+                    const response = await fetch(GOOGLE_SHEET_URL);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     
-                    const jsonData = await response.json();
+                    const csvText = await response.text();
                     
-                    if (jsonData.error) {
-                         throw new Error(jsonData.error);
-                    }
-                    
-                    originalData = jsonData;
-                    
-                    const amountKey = Object.keys(originalData[0] || {}).find(k => k.toLowerCase().includes('amount'));
+                    Papa.parse(csvText, {
+                        header: true,
+                        dynamicTyping: false,
+                        skipEmptyLines: true,
+                        transformHeader: header => header.trim(),
+                        complete: (results) => {
+                            originalData = results.data.filter(row => Object.values(row).some(val => val !== null && val !== '' && String(val).trim() !== ''));
+                            
+                            const amountKey = Object.keys(originalData[0] || {}).find(k => k.toLowerCase().includes('amount'));
 
-                    if (amountKey) {
-                        originalData.forEach(row => {
-                            const rawValue = row[amountKey];
-                            const cleanValue = String(rawValue).replace(/[^0-9.-]+/g, "");
-                            row[amountKey] = parseFloat(cleanValue) || 0;
-                        });
-                    }
-                    initializeApp(originalData);
-
+                            if (amountKey) {
+                                originalData.forEach(row => {
+                                    const rawValue = row[amountKey];
+                                    if (typeof rawValue === 'string') {
+                                        const cleanValue = rawValue.replace(/[^0-9.-]+/g, "");
+                                        row[amountKey] = parseFloat(cleanValue) || 0;
+                                    } else {
+                                        row[amountKey] = parseFloat(rawValue) || 0;
+                                    }
+                                });
+                            }
+                            initializeApp(originalData);
+                        }
+                    });
                 } catch (error) {
                     console.error("Error fetching or parsing data:", error);
-                    let errorMessage = `Failed to load data. Please check the sheet ID and ensure it has been shared with the script owner. Error: ${error.message}`;
+                    let errorMessage = `Failed to load data. Please check your internet connection.`;
                     const container = loader.parentElement;
                     container.innerHTML = `<div class="max-w-7xl mx-auto text-center p-6 bg-red-100 border border-red-300 text-red-800 rounded-lg shadow-md">${errorMessage}</div>`;
                 }
@@ -402,7 +463,7 @@
             
             function initializeApp(data) {
                 if (!data || data.length === 0) {
-                    loader.parentElement.innerHTML = `<div class="text-center text-amber-500">No data found in the sheet.</div>`;
+                    loader.parentElement.innerHTML = `<div class="text-center text-amber-500">No data found.</div>`;
                     return;
                 }
                 const headers = Object.keys(data[0]);
@@ -420,6 +481,45 @@
                 const filterContainer = document.getElementById('filter-container');
                 filterContainer.innerHTML = ''; 
 
+                // 1. Unified Smart Date Filter Block
+                const dateFilterWrapper = document.createElement('div');
+                dateFilterWrapper.className = "col-span-1 sm:col-span-2 bg-white/60 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
+                
+                // UPDATED: Changed overflow-x-auto to flex-wrap for visibility on mobile
+                dateFilterWrapper.innerHTML = `
+                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                        <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            Date Range
+                        </label>
+                        <div class="flex flex-wrap gap-2 pb-1">
+                            <button class="date-quick-btn active" data-range="all">All Time</button>
+                            <button class="date-quick-btn" data-range="thisMonth">This Month</button>
+                            <button class="date-quick-btn" data-range="lastMonth">Last Month</button>
+                            <button class="date-quick-btn" data-range="thisYear">This Year</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 items-center">
+                        <div class="relative w-full sm:flex-1 group">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 group-focus-within:text-blue-500 transition-colors">From</span>
+                            <input type="text" id="startDate" placeholder="Select Date" class="filter-date w-full pl-12 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm">
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </div>
+                        </div>
+                        <span class="text-slate-400 font-medium hidden sm:inline">to</span>
+                        <div class="relative w-full sm:flex-1 group">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 group-focus-within:text-blue-500 transition-colors">To</span>
+                            <input type="text" id="endDate" placeholder="Select Date" class="filter-date w-full pl-12 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm">
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                filterContainer.appendChild(dateFilterWrapper);
+
+                // 2. Dropdown Filters
                 const filterableHeaders = ['Site', 'Building', 'Payee', 'Type'];
                 const candidateHeaders = headers.filter(header => filterableHeaders.includes(header));
                 
@@ -432,43 +532,113 @@
 
                     const select = document.createElement('select');
                     select.dataset.column = header;
-                    select.className = "filter-select w-full p-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-slate-800";
-                    select.innerHTML = `<option value="">All</option>` + uniqueValues.map(v => `<option value="${v}">${v}</option>`).join('');
+                    select.className = "filter-select w-full p-2.5 bg-white border border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition-shadow";
+                    select.innerHTML = `<option value="">All ${header}s</option>` + uniqueValues.map(v => `<option value="${v}">${v}</option>`).join('');
 
                     const wrapper = document.createElement('div');
+                    wrapper.className = "flex flex-col justify-end";
                     wrapper.appendChild(label);
                     wrapper.appendChild(select);
                     filterContainer.appendChild(wrapper);
                 });
                 
-                document.querySelectorAll('.filter-select').forEach(select => {
-                    select.addEventListener('change', applyFilters);
+                // Initialize Flatpickr on the new inputs
+                flatpickr("#startDate", {
+                    dateFormat: "Y-m-d",
+                    allowInput: true,
+                    onChange: function() {
+                        applyFilters();
+                    }
                 });
+                flatpickr("#endDate", {
+                    dateFormat: "Y-m-d",
+                    allowInput: true,
+                    onChange: function() {
+                        applyFilters();
+                    }
+                });
+
+                // Attach Event Listeners
+                const quickBtns = dateFilterWrapper.querySelectorAll('.date-quick-btn');
+                const startDateInput = dateFilterWrapper.querySelector('#startDate');
+                const endDateInput = dateFilterWrapper.querySelector('#endDate');
+
+                quickBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        quickBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+
+                        const range = btn.dataset.range;
+                        const today = dayjs();
+                        let start = '', end = '';
+
+                        if (range === 'thisMonth') {
+                            start = today.startOf('month').format('YYYY-MM-DD');
+                            end = today.endOf('month').format('YYYY-MM-DD');
+                        } else if (range === 'lastMonth') {
+                            const lastMonth = today.subtract(1, 'month');
+                            start = lastMonth.startOf('month').format('YYYY-MM-DD');
+                            end = lastMonth.endOf('month').format('YYYY-MM-DD');
+                        } else if (range === 'thisYear') {
+                            start = today.startOf('year').format('YYYY-MM-DD');
+                            end = today.endOf('year').format('YYYY-MM-DD');
+                        } 
+
+                        // Update inputs via Flatpickr instance if available, otherwise fallback to value
+                        const fpStart = document.querySelector("#startDate")._flatpickr;
+                        const fpEnd = document.querySelector("#endDate")._flatpickr;
+                        
+                        if (fpStart) fpStart.setDate(start);
+                        else startDateInput.value = start;
+                        
+                        if (fpEnd) fpEnd.setDate(end);
+                        else endDateInput.value = end;
+                        
+                        applyFilters();
+                    });
+                });
+
+                document.querySelectorAll('.filter-select').forEach(select => select.addEventListener('change', applyFilters));
+                
+                // Keep manual input listeners for robustness (though Flatpickr handles most changes)
+                [startDateInput, endDateInput].forEach(input => input.addEventListener('change', () => {
+                    quickBtns.forEach(b => b.classList.remove('active'));
+                    applyFilters();
+                }));
             }
 
             function initializeDataTable(data, headers) {
-                const dateKey = findHeader(headers, ['Pay. Release', 'Date']);
-                const amountKey = findHeader(headers, ['Amount']);
+                // Modified date key detection to be more specific to avoid false positives (like 'Time' or 'Day')
+                const dateKey = findHeader(headers, ['Pay. Release', 'Date', 'Payment Date']);
+                const amountKey = findHeader(headers, ['Amount', 'Cost', 'Price', 'Value']);
 
                 const columns = [
                     { 
                         title: 'Date', 
-                        data: dateKey,
+                        data: null, // Pass full row object to render
                         defaultContent: "", 
                         width: "15%",
-                        render: function(data, type, row, meta) {
-                            const dateValue = row[dateKey];
-
-                            if (!dateValue) return '';
-                            const originalStr = String(dateValue).trim();
-
+                        render: function(row, type) {
+                            // Because data is null, the first arg 'row' is actually the data object for the row
+                            // We manually extract the key to avoid DataTables accessor issues with dots
+                            const rawValue = dateKey ? row[dateKey] : '';
+                            
                             if (type === 'sort' || type === 'type') {
-                                const dateObj = dayjs(originalStr, 'DD/MM/YYYY');
-                                return dateObj.isValid() ? dateObj.format('YYYYMMDD') : 0;
+                                // Try robust parsing
+                                const formats = ['DD/MM/YYYY', 'D/M/YYYY', 'YYYY-MM-DD', 'D-MMM-YY', 'D-MMM-YYYY'];
+                                let d = dayjs(String(rawValue).trim(), formats);
+                                if (!d.isValid()) d = dayjs(String(rawValue).trim());
+                                return d.isValid() ? d.unix() : 0;
                             }
                             
-                            const dateObj = dayjs(originalStr, 'DD/MM/YYYY');
-                            return dateObj.isValid() ? dateObj.format('DD MMM YYYY') : originalStr;
+                            // Display logic
+                            if (!rawValue) return '';
+                            
+                            const formats = ['DD/MM/YYYY', 'D/M/YYYY', 'YYYY-MM-DD', 'D-MMM-YY', 'D-MMM-YYYY'];
+                            let d = dayjs(String(rawValue).trim(), formats);
+                            if (!d.isValid()) d = dayjs(String(rawValue).trim());
+                            
+                            return d.isValid() ? d.format('DD MMM YYYY') : rawValue;
                         }
                     },
                     { title: 'Site', data: 'Site', defaultContent: "" },
@@ -477,11 +647,16 @@
                     { title: 'Purpose', data: 'Purpose', defaultContent: "" },
                     { 
                         title: 'Amount', 
-                        data: amountKey,
+                        data: null, // Pass full row object to render
                         defaultContent: "", 
                         width: "15%",
-                        render: function(data) {
-                            return typeof data === 'number' ? data.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) : data;
+                        className: 'dt-body-right',
+                        render: function(row, type) {
+                            const rawValue = amountKey ? row[amountKey] : '';
+                            if (type === 'sort' || type === 'type') {
+                                return typeof rawValue === 'number' ? rawValue : 0;
+                            }
+                            return typeof rawValue === 'number' ? rawValue.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) : rawValue;
                         }
                     }
                 ];
@@ -489,32 +664,117 @@
                 dataTableInstance = $('#dataTable').DataTable({
                     data: data,
                     columns: columns,
-                    responsive: true,
                     pageLength: 10,
                     lengthMenu: [10, 25, 50, 100],
                     destroy: true,
                     language: {
                         search: "_INPUT_",
-                        searchPlaceholder: "Search records..."
+                        searchPlaceholder: "Search records...",
+                        lengthMenu: "_MENU_",
+                        paginate: { next: "Next", previous: "Prev" }
                     },
-                    columnDefs: [
-                        {
-                            targets: 5, 
-                            className: 'dt-body-right'
-                        }
-                    ]
+                    dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-4"lf>rt<"flex flex-col sm:flex-row justify-between items-center mt-4 gap-4"ip>',
                 });
+
+                // Row Click Handler for Detail Modal
+                $('#dataTable tbody').on('click', 'tr', function () {
+                    const row = dataTableInstance.row(this);
+                    const rowData = row.data();
+
+                    if (rowData) {
+                        openDetailModal(rowData);
+                    }
+                });
+            }
+
+            function openDetailModal(data) {
+                const headers = Object.keys(data);
+                // Re-detect keys to ensure consistency
+                const dateKey = findHeader(headers, ['Pay. Release', 'Date', 'Payment Date']);
+                const amountKey = findHeader(headers, ['Amount', 'Cost', 'Price', 'Value']);
+                
+                // Prioritize specific fields order
+                const priorityKeys = [dateKey, 'Payee', amountKey, 'Site', 'Building', 'Purpose', 'Type'];
+                
+                let html = '';
+                const renderedKeys = new Set();
+
+                // Helper to render an item
+                const renderItem = (key, value) => {
+                    let displayValue = value;
+                    if (key === dateKey && value) {
+                        const formats = ['DD/MM/YYYY', 'YYYY-MM-DD', 'MM/DD/YYYY', 'D-MMM-YY', 'DD-MMM-YYYY', 'D/M/YYYY'];
+                        let d = dayjs(String(value).trim(), formats);
+                        if (d.isValid()) displayValue = d.format('DD MMM YYYY');
+                    } else if (key === amountKey && typeof value === 'number') {
+                         displayValue = `<span class="text-green-600 font-bold">${value.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>`;
+                    } else if (!displayValue && displayValue !== 0) {
+                        displayValue = '<span class="text-slate-300 italic">N/A</span>';
+                    }
+                    return `
+                        <div class="detail-item">
+                            <span class="detail-label">${key}</span>
+                            <span class="detail-value">${displayValue}</span>
+                        </div>
+                    `;
+                };
+
+                // 1. Render Priority Keys first
+                priorityKeys.forEach(key => {
+                    if (key && data.hasOwnProperty(key)) {
+                        html += renderItem(key, data[key]);
+                        renderedKeys.add(key);
+                    }
+                });
+
+                // 2. Render ALL remaining keys
+                headers.forEach(key => {
+                    if (!renderedKeys.has(key) && !key.startsWith('_')) {
+                         if (data[key] !== undefined) { 
+                            html += renderItem(key, data[key]);
+                         }
+                    }
+                });
+
+                detailModalContent.innerHTML = html;
+                detailModalOverlay.classList.add('visible');
             }
 
             function applyFilters() {
                 let filteredData = [...originalData];
+                
+                // 1. Dropdown Filters
                 document.querySelectorAll('.filter-select').forEach(select => {
                     const column = select.dataset.column;
                     const value = select.value;
-                    if (value) {
-                        filteredData = filteredData.filter(row => row[column] == value);
-                    }
+                    if (value) filteredData = filteredData.filter(row => row[column] == value);
                 });
+
+                // 2. Date Filters
+                const startDateInput = document.getElementById('startDate');
+                const endDateInput = document.getElementById('endDate');
+                const startDateVal = startDateInput?.value;
+                const endDateVal = endDateInput?.value;
+                    
+                if (startDateVal || endDateVal) {
+                    const headers = Object.keys(originalData[0] || {});
+                    const dateKey = findHeader(headers, ['Pay. Release', 'Date', 'Payment Date']);
+                    
+                    if (dateKey) {
+                        filteredData = filteredData.filter(row => {
+                            const rawDate = String(row[dateKey]).trim();
+                            // Use same robust parsing logic
+                            const formats = ['DD/MM/YYYY', 'YYYY-MM-DD', 'MM/DD/YYYY', 'D-MMM-YY', 'DD-MMM-YYYY', 'D/M/YYYY'];
+                            let rowDate = dayjs(rawDate, formats);
+                            
+                            if (!rowDate.isValid()) return false;
+                            
+                            if (startDateVal && rowDate.isBefore(dayjs(startDateVal), 'day')) return false;
+                            if (endDateVal && rowDate.isAfter(dayjs(endDateVal), 'day')) return false;
+                            return true;
+                        });
+                    }
+                }
                 
                 dataTableInstance.clear().rows.add(filteredData).draw();
                 updateSummary(filteredData);
@@ -529,209 +789,133 @@
                 document.getElementById('total-amount').textContent = totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
             }
             
+            // --- PDF Download Feature ---
             downloadPdfButton.addEventListener('click', () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
                 const filteredData = dataTableInstance.rows({ search: 'applied' }).data().toArray();
                 const headers = Object.keys(originalData[0] || {});
-                const dateKey = findHeader(headers, ['Pay. Release', 'Date']);
+                const dateKey = findHeader(headers, ['Pay. Release', 'Date', 'Payment Date']);
                 const amountKey = findHeader(headers, ['Amount']);
 
-                let tableColumns = ["Date", "Site", "Building", "Payee"];
-                const hasPurpose = headers.includes('Purpose');
-                const hasSourceAccount = headers.includes('Source Account');
-
-                if (hasPurpose) tableColumns.push("Purpose");
-                tableColumns.push("Type");
-                if (hasSourceAccount) tableColumns.push("Source Account");
-                tableColumns.push("Amount");
-
-                const tableRows = [];
-
-                filteredData.forEach(item => {
-                    const dateValue = item[dateKey];
-                    const dateObj = dayjs(String(dateValue).trim(), 'DD/MM/YYYY');
-                    const formattedDate = dateObj.isValid() ? dateObj.format('DD MMM YYYY') : dateValue;
-                    
-                    const amountValue = item[amountKey];
-                    const formattedAmount = typeof amountValue === 'number' ? amountValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : amountValue;
-
-                    let rowData = [
-                        formattedDate,
-                        item['Site'],
-                        item['Building'],
-                        item['Payee'],
-                    ];
-
-                    if (hasPurpose) rowData.push(item['Purpose'] || '');
-                    rowData.push(item['Type'] || '');
-                    if (hasSourceAccount) rowData.push(item['Source Account'] || '');
-                    rowData.push(formattedAmount);
-                    
-                    tableRows.push(rowData);
+                let tableColumns = ["Date", "Site", "Building", "Payee", "Purpose", "Type", "Amount"];
+                
+                const tableRows = filteredData.map(item => {
+                    const d = dayjs(String(item[dateKey]).trim(), ['DD/MM/YYYY', 'YYYY-MM-DD'], true);
+                    const fmtDate = d.isValid() ? d.format('DD MMM YYYY') : item[dateKey];
+                    const fmtAmt = typeof item[amountKey] === 'number' ? item[amountKey].toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : item[amountKey];
+                    return [fmtDate, item['Site'], item['Building'], item['Payee'], item['Purpose'] || '', item['Type'] || '', fmtAmt];
                 });
 
                 let activeFiltersList = [];
-                document.querySelectorAll('.filter-select').forEach(select => {
-                    if (select.value) {
-                        activeFiltersList.push(`${select.dataset.column}: '${select.value}'`);
-                    }
-                });
-
-                let reportTitle = activeFiltersList.length === 0 
-                    ? "Complete Data Report" 
-                    : "Report for " + activeFiltersList.join(', ');
+                document.querySelectorAll('.filter-select').forEach(s => s.value && activeFiltersList.push(`${s.dataset.column}: ${s.value}`));
+                const sVal = document.getElementById('startDate')?.value, eVal = document.getElementById('endDate')?.value;
+                if(sVal) activeFiltersList.push(`From: ${sVal}`);
+                if(eVal) activeFiltersList.push(`To: ${eVal}`);
 
                 doc.setFontSize(18);
-                doc.text(reportTitle, 14, 22);
-                doc.setFontSize(11);
-                doc.setTextColor(100);
-                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 29);
+                doc.text(activeFiltersList.length ? "Filtered Payment Report" : "Complete Payment Report", 14, 22);
+                doc.setFontSize(10);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+                if(activeFiltersList.length) doc.text(`Filters: ${activeFiltersList.join(', ')}`, 14, 33);
 
-                const totalAmount = filteredData.reduce((sum, row) => sum + (row[amountKey] || 0), 0);
-                const formattedTotal = totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                
-                const amountColumnIndex = tableColumns.length - 1;
-                const totalColSpan = tableColumns.length - 1;
+                const total = filteredData.reduce((s, r) => s + (r[amountKey]||0), 0);
 
                 doc.autoTable({
                     head: [tableColumns],
                     body: tableRows,
-                    startY: 35,
+                    startY: activeFiltersList.length ? 38 : 33,
                     theme: 'striped',
-                    headStyles: { fillColor: [41, 128, 185] },
-                    columnStyles: {
-                        [amountColumnIndex]: { halign: 'right' }
-                    },
-                    foot: [[{
-                        content: 'Total Amount:',
-                        colSpan: totalColSpan,
-                        styles: { halign: 'right', fontStyle: 'bold' }
-                    }, {
-                        content: formattedTotal,
-                        styles: { halign: 'right', fontStyle: 'bold' }
-                    }]],
-                    footStyles: {
-                        fillColor: [234, 236, 240],
-                        textColor: [0, 0, 0]
-                    }
+                    headStyles: { fillColor: [37, 99, 235] },
+                    columnStyles: { 6: { halign: 'right' } },
+                    foot: [[{ content: 'Total:', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } }, { content: total.toLocaleString('en-IN', {minimumFractionDigits:2}), styles: { halign: 'right', fontStyle: 'bold' } }]]
                 });
-
-                doc.save('payment-report.pdf');
+                doc.save('report.pdf');
             });
 
-            // --- Gemini AI Chat Feature ---
-
+            // --- Gemini AI & Modal Logic ---
             function addMessageToChat(message, sender) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `chat-message ${sender}-message`;
-                messageDiv.textContent = message;
-                chatHistoryContainer.appendChild(messageDiv);
+                const div = document.createElement('div');
+                div.className = `chat-message ${sender}-message`;
+                div.innerHTML = message.replace(/\n/g, '<br>');
+                chatHistoryContainer.appendChild(div);
                 chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
             }
 
             async function getGeminiChatResponse() {
                 chatSendButton.disabled = true;
-                addMessageToChat("Thinking...", "model"); 
-
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
-
-                const systemPrompt = {
-                    role: "user",
-                    parts: [{ text: `You are a helpful and concise financial data analyst. The user has filtered their payment data. Here is the currently visible data (currency is INR): ${currentDataSampleForAI}. Based on this data context, please answer the user's questions.` }]
-                };
+                addMessageToChat('<div class="flex space-x-1"><div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div><div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay:0.1s"></div><div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay:0.2s"></div></div>', "model"); 
                 
-                const apiHistory = [systemPrompt, ...chatHistory];
+                const apiKey = "AIzaSyAIAYXTqPFylXxJxcNP3pu442jEO0GMQOg"; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const contents = [
+                    { role: "user", parts: [{ text: `System Context: You are a financial analyst. Current Data: ${currentDataSampleForAI}` }] },
+                    ...chatHistory
+                ];
 
-                const payload = {
-                    contents: apiHistory,
-                };
-
-                const request = fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                request.then(response => {
-                    if (!response.ok) {
-                        throw new Error(`API error! status: ${response.status}`);
-                    }
-                    return response.json();
-                }).then(result => {
-                    const aiResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    chatHistoryContainer.removeChild(chatHistoryContainer.lastChild);
-
-                    if (aiResponse) {
-                        addMessageToChat(aiResponse, "model");
-                        chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    chatHistoryContainer.removeChild(chatHistoryContainer.lastChild); // Remove loading
+                    
+                    if (text) {
+                        addMessageToChat(text, "model");
+                        chatHistory.push({ role: "model", parts: [{ text }] });
                     } else {
-                        addMessageToChat("Sorry, I couldn't get a response. Please try again.", "model");
+                        addMessageToChat("I didn't catch that. Could you try again?", "model");
                     }
-                    chatSendButton.disabled = false;
-                    chatInput.focus();
-                }).catch(error => {
-                    console.error("Gemini API Error:", error);
+                } catch (e) {
+                    console.error(e);
                     chatHistoryContainer.removeChild(chatHistoryContainer.lastChild);
-                    addMessageToChat("An error occurred. Please check the console for details.", "model");
-                    chatSendButton.disabled = false;
-                    chatInput.focus();
-                });
+                    addMessageToChat("Connection error. Please try again.", "model");
+                }
+                chatSendButton.disabled = false;
+                chatInput.focus();
             }
+
+            // Modal Toggles
+            const toggleModal = (modal, show) => show ? modal.classList.add('visible') : modal.classList.remove('visible');
             
             geminiAnalysisButton.addEventListener('click', () => {
-                const filteredData = dataTableInstance.rows({ search: 'applied' }).data().toArray();
-                if (filteredData.length === 0) {
-                    chatHistoryContainer.innerHTML = '';
-                    addMessageToChat("No data available for analysis. Please apply different filters or clear your search to continue.", "model");
-                    showGeminiModal();
-                    return;
-                }
+                const data = dataTableInstance.rows({ search: 'applied' }).data().toArray();
+                if(!data.length) return alert("No data to analyze!");
                 
-                const dataForAI = filteredData;
-
-                const dataSample = dataForAI.map(row => ({
-                    purpose: row.Purpose,
-                    payee: row.Payee,
-                    amount: row.Amount,
-                    type: row.Type
-                }));
-                currentDataSampleForAI = JSON.stringify(dataSample);
+                currentDataSampleForAI = JSON.stringify(data.slice(0, 100).map(r => ({ ...r, Amount: Math.round(r.Amount||0) }))); // Sample for context limit
                 
                 chatHistory = [];
                 chatHistoryContainer.innerHTML = '';
-
-                const initialMessage = `Hello! I'm your AI data analyst. I've loaded all ${filteredData.length} rows of your filtered data. How can I help you analyze it?`;
-                
-                addMessageToChat(initialMessage, "model");
-                showGeminiModal();
+                addMessageToChat(`Hi! I'm ready to analyze your ${data.length} filtered records.`, "model");
+                toggleModal(geminiModalOverlay, true);
             });
 
             chatInputForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const userMessage = chatInput.value.trim();
-                if (userMessage) {
-                    addMessageToChat(userMessage, "user");
-                    chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+                const text = chatInput.value.trim();
+                if (text) {
+                    addMessageToChat(text, "user");
+                    chatHistory.push({ role: "user", parts: [{ text }] });
                     chatInput.value = '';
                     getGeminiChatResponse();
                 }
             });
 
-            function showGeminiModal() { geminiModalOverlay.classList.add('visible'); }
-            function hideGeminiModal() { geminiModalOverlay.classList.remove('visible'); }
-
-            geminiModalClose.addEventListener('click', hideGeminiModal);
-            geminiModalOverlay.addEventListener('click', (e) => {
-                if (e.target === geminiModalOverlay) {
-                    hideGeminiModal();
-                }
-            });
+            geminiModalClose.addEventListener('click', () => toggleModal(geminiModalOverlay, false));
+            geminiModalOverlay.addEventListener('click', (e) => e.target === geminiModalOverlay && toggleModal(geminiModalOverlay, false));
+            
+            detailModalClose.addEventListener('click', () => toggleModal(detailModalOverlay, false));
+            detailModalCloseBtn.addEventListener('click', () => toggleModal(detailModalOverlay, false));
+            detailModalOverlay.addEventListener('click', (e) => e.target === detailModalOverlay && toggleModal(detailModalOverlay, false));
 
             fetchData();
         });
     </script>
 </body>
 </html>
-
