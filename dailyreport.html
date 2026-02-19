@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daily Site Operations Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+    
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { 
+                sans: ['Inter', 'sans-serif'],
+                mono: ['JetBrains Mono', 'monospace']
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body { 
+            background-color: #fcfcfd; 
+            color: #0f172a; 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; font-size: 10pt; }
+            .site-block { 
+                page-break-after: always; 
+                padding-top: 0.5rem !important; 
+                border-bottom: none !important; 
+                border-top: 3px solid #0f172a !important;
+                margin-bottom: 1.5rem !important;
+            }
+            .site-block:last-child { page-break-after: auto; }
+            .content-grid { gap: 1rem !important; display: block !important; }
+            .lg\:col-span-7, .lg\:col-span-5 { width: 100% !important; margin-bottom: 1.5rem; }
+            img { max-width: 100% !important; height: auto !important; break-inside: avoid; border: 1px solid #eee !important; margin-top: 0.5rem; }
+            section { break-inside: avoid; }
+            h3 { font-size: 2.2rem !important; line-height: 1 !important; }
+            .shadow-xl, .shadow-lg, .shadow-sm { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            .contractor-primary { background-color: #0f172a !important; color: white !important; -webkit-print-color-adjust: exact; padding: 2px 8px !important; }
+            .bg-slate-900 { background-color: #0f172a !important; color: white !important; }
+            .bg-slate-100 { background-color: #f1f5f9 !important; }
+            .resource-chip.active { background-color: #0f172a !important; color: white !important; padding: 1px 4px !important; }
+        }
+
+        .meta-tag {
+            font-size: 7px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748b;
+        }
+
+        .resource-chip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .resource-chip.active {
+            background: #0f172a;
+            color: white;
+            border-color: #0f172a;
+        }
+
+        .contractor-primary {
+            background: #0f172a;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .worker-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bill-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="env,react">
+        const { useState, useEffect, useMemo } = React;
+
+        const ENDPOINTS = {
+            work: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRppVpVKZyqlGUMyj5ittwOEzKkG5aarI5T1ZL__ahFnkE_IPAMPRlyKxD3UHP1QZQmvDGSQqp2nXya/pub?gid=963052324&single=true&output=csv',
+            material: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRojP6VfHlmeCYOYSW5NGTlXvHFK_M4MGgiziRwc443SCJGOD2K13qS9aF4_lLJeAEXa3VDh_lhIQWS/pub?gid=1476787141&single=true&output=csv',
+            enquiry: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTzOSn7-7AhZkO5znAq056hNmZlToLGWEVeWxDHgmG7K3ycuBpIJLRRXLzSx7aCAdPbhZU8jkzm_dSP/pub?gid=0&single=true&output=csv',
+            tea: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMFhgoEGZjCoX9WMlb5cH8nAaL3D7yE2w4De1Ba5bgThAD5C4yAk6pkW9Y0NDVTMr7dZ3fiemR6J/pub?gid=1343982457&single=true&output=csv'
+        };
+
+        const Lib = {
+            parseCSV: (line) => {
+                const arr = [];
+                let cur = '', q = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (c === '"') q = !q;
+                    else if (c === ',' && !q) { arr.push(cur.trim()); cur = ''; }
+                    else cur += c;
+                }
+                arr.push(cur.trim());
+                return arr.map(v => v.replace(/^"|"$/g, '').replace(/""/g, '"'));
+            },
+            getValue: (obj, keys) => {
+                const normalizedKeys = keys.map(k => k.toLowerCase().replace(/[\s\._-]/g, ''));
+                for (const actualKey in obj) {
+                    const normalizedActual = actualKey.toLowerCase().replace(/[\s\._-]/g, '');
+                    if (normalizedActual && normalizedKeys.includes(normalizedActual)) return obj[actualKey];
+                }
+                return '';
+            },
+            toDate: (s) => {
+                if (!s) return null;
+                const p = String(s).split(/[\/.-]/);
+                if (p.length < 3) return null;
+                const d = parseInt(p[0], 10);
+                const m = parseInt(p[1], 10) - 1;
+                const yPart = p[2].split(' ')[0];
+                const y = yPart.length === 2 ? 2000 + parseInt(yPart, 10) : parseInt(yPart, 10);
+                return new Date(y, m, d);
+            },
+            driveUrl: (u) => {
+                if (!u || !u.includes('drive.google.com')) return null;
+                const m = u.match(/\/d\/([a-zA-Z0-9_-]+)/) || u.match(/id=([a-zA-Z0-9_-]+)/);
+                return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : null;
+            }
+        };
+
+        const App = () => {
+            // Check URL for date param
+            const getInitialDate = () => {
+                const params = new URLSearchParams(window.location.search);
+                const date = params.get('date');
+                if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+                return new Date().toISOString().split('T')[0];
+            };
+
+            const [selDate, setSelDate] = useState(getInitialDate());
+            const [raw, setRaw] = useState({ work: [], material: [], enquiry: [], tea: [] });
+            const [isLoading, setIsLoading] = useState(true);
+            const [isExporting, setIsExporting] = useState(false);
+
+            useEffect(() => {
+                const init = async () => {
+                    setIsLoading(true);
+                    try {
+                        const results = await Promise.all(Object.entries(ENDPOINTS).map(([k, u]) => 
+                            fetch(u).then(r => r.text()).then(txt => {
+                                const rows = txt.split(/\r?\n/).filter(l => l.trim());
+                                const heads = Lib.parseCSV(rows[0]);
+                                return rows.slice(1).map(r => {
+                                    const vs = Lib.parseCSV(r);
+                                    const o = {};
+                                    heads.forEach((h, i) => o[h.trim()] = vs[i]);
+                                    return o;
+                                });
+                            })
+                        ));
+                        setRaw({ work: results[0], material: results[1], enquiry: results[2], tea: results[3] });
+                    } catch (e) { console.error(e); }
+                    setIsLoading(false);
+                };
+                init();
+            }, []);
+
+            const processedData = useMemo(() => {
+                const target = new Date(selDate);
+                const isTarget = (ds) => {
+                    const d = Lib.toDate(ds);
+                    return d && d.toDateString() === target.toDateString();
+                };
+
+                const report = {};
+
+                const getSite = (n) => {
+                    const name = (n || 'Site Unassigned').trim();
+                    if (!report[name]) report[name] = { buildings: {}, materials: [], enquiries: [], refreshments: [], teaTotal: 0 };
+                    return report[name];
+                };
+
+                // Work Progress
+                raw.work.filter(w => isTarget(Lib.getValue(w, ['Date', 'Pay Release', 'Timestamp']))).forEach(w => {
+                    const s = getSite(Lib.getValue(w, ['Site', 'Project']));
+                    const b = Lib.getValue(w, ['Building', 'Area', 'Floor', 'Location']) || 'General Site';
+                    if (!s.buildings[b]) s.buildings[b] = [];
+                    
+                    s.buildings[b].push({
+                        desc: Lib.getValue(w, ['Work Description', 'Purpose', 'Activity', 'Task']),
+                        contractor: Lib.getValue(w, ['Contractor/Worker', 'Contractor', 'Contractor Name', 'Vendor', 'Firm', 'Sub-Contractor', 'Agency', 'Company']),
+                        worker: Lib.getValue(w, ['Worker', 'Worker Name', 'Name', 'Staff', 'Person']),
+                        type: Lib.getValue(w, ['Type', 'Category', 'Trade']),
+                        ma: parseInt(Lib.getValue(w, ['MA']) || 0),
+                        mc: parseInt(Lib.getValue(w, ['MC']) || 0),
+                        fc: parseInt(Lib.getValue(w, ['FC']) || 0),
+                        cement: parseInt(Lib.getValue(w, ['Cement']) || 0),
+                        img: Lib.driveUrl(Lib.getValue(w, ['Images', 'Photos', 'Image', 'Photo', 'Evidence', 'Work Photo', 'Work Photos']))
+                    });
+                });
+
+                // Materials
+                raw.material.filter(m => isTarget(Lib.getValue(m, ['Date']))).forEach(m => {
+                    getSite(Lib.getValue(m, ['Site'])).materials.push(m);
+                });
+
+                // Site Enquiries
+                raw.enquiry.filter(e => isTarget(Lib.getValue(e, ['Timestamp', 'Date']))).forEach(e => {
+                    getSite(Lib.getValue(e, ['Site'])).enquiries.push({
+                        client: Lib.getValue(e, ['Client Name', 'Name', 'Customer', 'Full Name']),
+                        phone: Lib.getValue(e, ['Phone', 'Mobile', 'Contact', 'Phone Number']),
+                        product: Lib.getValue(e, ['Product', 'Service', 'Requirement Type', 'Interest']),
+                        details: Lib.getValue(e, ['Requirements', 'Details', 'Notes', 'Message'])
+                    });
+                });
+
+                // Refreshments (Tea Log)
+                raw.tea.filter(t => isTarget(Lib.getValue(t, ['Date']))).forEach(t => {
+                    const s = getSite(Lib.getValue(t, ['Site']));
+                    const tea = parseInt(Lib.getValue(t, ['Tea', 'Count', 'Tea Quantity']) || 0);
+                    const biscuits = parseInt(Lib.getValue(t, ['Biscuits', 'Cookies', 'Biscuit Quantity']) || 0);
+                    const coffee = parseInt(Lib.getValue(t, ['Coffee', 'Coffee Quantity']) || 0);
+                    const bill = Lib.driveUrl(Lib.getValue(t, ['Bill', 'Receipt', 'Image', 'Bill Photo']));
+                    const location = Lib.getValue(t, ['Building', 'Location', 'Area', 'Worksite Section', 'Floor']);
+                    
+                    s.refreshments.push({ 
+                        tea, biscuits, coffee, bill, location,
+                        time: Lib.getValue(t, ['Time', 'Entry Time', 'Timestamp']) 
+                    });
+                    s.teaTotal += (tea + coffee);
+                });
+
+                return Object.entries(report).sort((a,b) => a[0].localeCompare(b[0]));
+            }, [raw, selDate]);
+
+            const shareToWhatsApp = () => {
+                if (processedData.length === 0) return;
+                
+                let text = `*🏗️ DAILY SITE AUDIT SUMMARY*\n*Date:* ${new Date(selDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\n\n`;
+                
+                processedData.forEach(([siteName, siteData]) => {
+                    text += `*📍 SITE: ${siteName.toUpperCase()}*\n`;
+                    text += `-----------------------------------\n`;
+                    
+                    // Progress Breakdown per Building
+                    const buildings = Object.keys(siteData.buildings);
+                    if (buildings.length > 0) {
+                        text += `*✅ WORK PROGRESS:*\n`;
+                        buildings.forEach(building => {
+                            text += `• _${building}:_\n`;
+                            siteData.buildings[building].forEach((log, idx) => {
+                                const actor = log.contractor || log.worker || 'N/A';
+                                text += `  ${idx + 1}. ${log.desc} (${actor})\n`;
+                                if (log.ma || log.mc || log.fc || log.cement) {
+                                  let resources = [];
+                                  if (log.ma) resources.push(`MA:${log.ma}`);
+                                  if (log.mc) resources.push(`MC:${log.mc}`);
+                                  if (log.fc) resources.push(`FC:${log.fc}`);
+                                  if (log.cement) resources.push(`CEM:${log.cement}`);
+                                  text += `     [${resources.join(' | ')}]\n`;
+                                }
+                            });
+                        });
+                        text += `\n`;
+                    }
+                    
+                    // Materials Details
+                    if (siteData.materials.length > 0) {
+                        text += `*📦 MATERIALS INFLOW:*\n`;
+                        siteData.materials.forEach(m => {
+                            text += `- ${m.Material}: ${m.Quantity}\n`;
+                        });
+                        text += `\n`;
+                    }
+                    
+                    // Refreshments Detailed
+                    if (siteData.refreshments.length > 0) {
+                        text += `*☕ REFRESHMENTS:*\n`;
+                        siteData.refreshments.forEach(r => {
+                          const items = [];
+                          if (r.tea) items.push(`${r.tea} Tea`);
+                          if (r.coffee) items.push(`${r.coffee} Coffee`);
+                          if (r.biscuits) items.push(`${r.biscuits} Biscuits`);
+                          text += `- ${r.location || 'Site Office'}: ${items.join(', ')}\n`;
+                        });
+                        text += `_Total Units: ${siteData.teaTotal}_\n\n`;
+                    }
+
+                    // Enquiries Details
+                    if (siteData.enquiries.length > 0) {
+                        text += `*📞 NEW ENQUIRIES:*\n`;
+                        siteData.enquiries.forEach((e, idx) => {
+                            text += `${idx + 1}. ${e.client} (${e.phone})\n`;
+                            text += `   Int: ${e.product}\n`;
+                        });
+                        text += `\n`;
+                    }
+                    
+                    text += `\n`;
+                });
+
+                // Report Link Construction
+                const reportUrl = `${window.location.origin}${window.location.pathname}?date=${selDate}`;
+                text += `*🔗 Full Digital Report:* \n${reportUrl}`;
+
+                const encodedText = encodeURIComponent(text);
+                window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+            };
+
+            const handleSavePDF = async () => {
+                if (isExporting) return;
+                setIsExporting(true);
+                
+                const element = document.getElementById('report-container');
+                const formattedDate = new Date(selDate).toISOString().split('T')[0];
+                const filename = `Site_Report_${formattedDate}.pdf`;
+                
+                const opt = {
+                    margin: [8, 8, 8, 8],
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: { 
+                        scale: 1.5, 
+                        useCORS: true, 
+                        letterRendering: true,
+                        logging: false
+                    },
+                    jsPDF: { 
+                        unit: 'mm', 
+                        format: 'a4', 
+                        orientation: 'portrait' 
+                    },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                };
+
+                try {
+                    await html2pdf().set(opt).from(element).save();
+                } catch (error) {
+                    console.error("PDF generation failed:", error);
+                    window.print();
+                } finally {
+                    setIsExporting(false);
+                }
+            };
+
+            if (isLoading) return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+                    <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-[9px] font-black tracking-widest uppercase opacity-30">Generating Console</p>
+                </div>
+            );
+
+            return (
+                <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+                    {/* HEADER - COMPACT */}
+                    <header className="no-print flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center font-black text-[10px] rounded-sm">R</div>
+                                <h1 className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">Operational Summary</h1>
+                            </div>
+                            <div className="flex items-baseline gap-4">
+                                <h2 className="text-4xl font-black tracking-tighter uppercase text-slate-900 leading-none">Site Ledger</h2>
+                                <input 
+                                    type="date" 
+                                    value={selDate}
+                                    onChange={e => setSelDate(e.target.value)}
+                                    className="text-lg font-black bg-transparent border-b-2 border-slate-900 outline-none pb-0.5 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={shareToWhatsApp} 
+                                className="bg-emerald-600 text-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.1em] rounded-sm hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-50"
+                            >
+                                WhatsApp Full Detail
+                            </button>
+                            <button 
+                                onClick={handleSavePDF} 
+                                disabled={isExporting}
+                                className={`${isExporting ? 'bg-slate-400' : 'bg-slate-900 hover:bg-black'} text-white px-6 py-3 text-[10px] font-black uppercase tracking-[0.1em] rounded-sm transition-all flex items-center gap-2 shadow-lg shadow-slate-100`}
+                            >
+                                {isExporting ? 'Generating...' : 'Save PDF'}
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* REPORT CONTENT */}
+                    <div id="report-container">
+                        {processedData.length === 0 ? (
+                            <div className="py-24 text-center border-t border-slate-100">
+                                <p className="text-slate-300 font-black uppercase tracking-[0.3em] text-xs">No records found</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-12">
+                                {processedData.map(([siteName, siteData]) => (
+                                    <section key={siteName} className="site-block border-t-4 border-slate-900 pt-6 pb-12">
+                                        <div className="mb-8 flex flex-col md:flex-row justify-between items-baseline gap-2">
+                                            <div className="space-y-0.5">
+                                                <div className="meta-tag">Site Identity</div>
+                                                <h3 className="text-4xl font-black tracking-tighter uppercase text-slate-900 leading-tight">{siteName}</h3>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-mono text-[10px] font-black bg-slate-100 px-3 py-0.5 rounded uppercase">{new Date(selDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="content-grid grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                            {/* WORK PROGRESS COLUMN */}
+                                            <div className="lg:col-span-7 space-y-10">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <div className="w-1.5 h-6 bg-slate-900"></div>
+                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Progress Log</h4>
+                                                </div>
+
+                                                {Object.entries(siteData.buildings).map(([building, logs]) => (
+                                                    <div key={building} className="space-y-6">
+                                                        <div className="flex justify-between items-end border-b-2 border-slate-100 pb-1.5">
+                                                            <span className="text-lg font-black uppercase tracking-tight text-slate-900">{building}</span>
+                                                            <span className="meta-tag">{logs.length} Tasks</span>
+                                                        </div>
+                                                        <div className="space-y-6">
+                                                            {logs.map((log, i) => (
+                                                                <div key={i} className="flex flex-col gap-4 break-inside-avoid">
+                                                                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                                                                        <div className="flex-grow space-y-3">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className="text-[8px] font-black bg-slate-100 px-2 py-0.5 rounded-sm">#{i+1}</span>
+                                                                                {log.type && <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{log.type}</span>}
+                                                                            </div>
+                                                                            <p className="text-xl font-black text-slate-800 leading-tight tracking-tight">{log.desc}</p>
+                                                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                                                {(log.contractor || log.worker) && (
+                                                                                    <>
+                                                                                        {log.contractor && (
+                                                                                            <div className="contractor-primary">
+                                                                                                <span className="opacity-40 text-[7px] mr-1">C:</span>
+                                                                                                {log.contractor}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {log.worker && log.worker !== log.contractor && (
+                                                                                            <div className="worker-secondary">
+                                                                                                <span className="opacity-40 text-[7px] mr-1">P:</span>
+                                                                                                {log.worker}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                                                                {log.ma > 0 && <div className="resource-chip active">MA: {log.ma}</div>}
+                                                                                {log.mc > 0 && <div className="resource-chip active">MC: {log.mc}</div>}
+                                                                                {log.fc > 0 && <div className="resource-chip active">FC: {log.fc}</div>}
+                                                                                {log.cement > 0 && <div className="resource-chip active">CEM: {log.cement}</div>}
+                                                                            </div>
+                                                                        </div>
+                                                                        {log.img && (
+                                                                            <div className="w-full md:w-48 flex-shrink-0">
+                                                                                <img src={log.img} className="w-full aspect-video object-cover rounded shadow-md" alt="Task photo" />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* MATERIALS & REFRESHMENTS COLUMN */}
+                                            <div className="lg:col-span-5 space-y-12">
+                                                <div className="space-y-4 break-inside-avoid">
+                                                    <div className="flex items-center gap-2 border-b-2 border-slate-900 pb-1.5">
+                                                        <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-900">Materials Inflow</h4>
+                                                    </div>
+                                                    {siteData.materials.length > 0 ? (
+                                                        <div className="bg-white border border-slate-100 rounded p-4 space-y-2.5">
+                                                            {siteData.materials.map((m, i) => (
+                                                                <div key={i} className="flex justify-between items-baseline border-b border-slate-50 last:border-0 pb-1.5 last:pb-0">
+                                                                    <span className="text-[11px] font-black text-slate-700 uppercase">{m.Material || 'Item'}</span>
+                                                                    <span className="font-mono text-[12px] font-black text-slate-900">{m.Quantity || '0'}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[9px] font-bold text-slate-300 italic">No inflow</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-4 break-inside-avoid">
+                                                    <div className="flex items-center gap-2 border-b-2 border-slate-900 pb-1.5">
+                                                        <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-900">Refreshments</h4>
+                                                    </div>
+                                                    {siteData.refreshments.length > 0 ? (
+                                                        <div className="bg-slate-50 border border-slate-100 rounded p-4 space-y-4">
+                                                            {siteData.refreshments.map((r, i) => (
+                                                                <div key={i} className="bg-white p-3 rounded shadow-sm border border-slate-100 break-inside-avoid space-y-1.5">
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-[11px] font-black text-slate-900 uppercase">{r.location || `Office`}</span>
+                                                                        <span className="text-[8px] font-bold text-slate-400 uppercase">{r.time}</span>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 gap-x-4 text-[10px] font-bold text-slate-600">
+                                                                        {r.tea > 0 && <div className="flex justify-between"><span>Tea</span> <span>{r.tea}</span></div>}
+                                                                        {r.coffee > 0 && <div className="flex justify-between"><span>Coffee</span> <span>{r.coffee}</span></div>}
+                                                                        {r.biscuits > 0 && <div className="flex justify-between"><span>Biscuits</span> <span>{r.biscuits}</span></div>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            <div className="pt-3 border-t-2 border-slate-200 flex justify-between items-center px-1">
+                                                                <span className="text-[9px] font-black uppercase text-slate-400">Total Units</span>
+                                                                <span className="text-2xl font-black text-slate-900">{siteData.teaTotal}</span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[9px] font-bold text-slate-300 italic">No logs</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-4 break-inside-avoid">
+                                                    <div className="flex items-center gap-2 border-b-2 border-slate-900 pb-1.5">
+                                                        <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-900">Enquiries</h4>
+                                                    </div>
+                                                    {siteData.enquiries.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            {siteData.enquiries.map((e, i) => (
+                                                                <div key={i} className="bg-white border-2 border-slate-900 p-4 shadow-[4px_4px_0px_#0f172a] rounded-sm break-inside-avoid">
+                                                                    <div className="text-[8px] font-black uppercase text-slate-400 mb-2 flex justify-between">
+                                                                        <span>REF: ENQ-0{i+1}</span>
+                                                                        <span className="text-slate-900">NEW LEAD</span>
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <div>
+                                                                            <div className="text-lg font-black text-slate-900 uppercase leading-none">{e.client}</div>
+                                                                            <div className="text-[10px] font-black text-slate-400 mt-0.5">{e.phone}</div>
+                                                                        </div>
+                                                                        <div className="text-[9px] font-black uppercase text-slate-600 bg-slate-50 px-2 py-0.5 inline-block">Interest: {e.product || 'General'}</div>
+                                                                        <p className="text-[11px] font-bold leading-tight text-slate-800 italic border-l-2 border-slate-200 pl-3">"{e.details}"</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[9px] font-bold text-slate-300 italic">No enquiries</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
