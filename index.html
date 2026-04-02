@@ -338,10 +338,11 @@
 
   <nav id="main-navbar">
     <div class="nav-container">
-      <a href="#enquiries" class="nav-link">Enquiries</a>
-      <a href="#entries" class="nav-link">Entries</a>
       <a href="#reports" class="nav-link">Reports</a>
-      <a href="#data-logs" class="nav-link">Data Logs</a>
+      <a href="#cement-stock" class="nav-link">Cement Stock</a>
+      
+      
+    
     </div>
   </nav>
 
@@ -408,6 +409,16 @@
     </div>
   </section>
 
+  <section class="section" id="cement-stock">
+  <h2>Cement Stock</h2>
+  <div id="cement-stock-container" style="text-align: left;">
+    <p>Loading...</p>
+  </div>
+  <button onclick="loadCementStock()" style="margin-top: 15px; padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+    <i class="fas fa-sync-alt"></i> Refresh
+  </button>
+</section>
+
   <footer>
     &copy; 2025 Guberaan Builders. All rights reserved.
   </footer>
@@ -467,6 +478,56 @@
           });
       });
     }
+  </script>
+
+  <script>
+  // Cement Stock - Fetch from Google Sheets
+  const CEMENT_STOCK_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRppVpVKZyqlGUMyj5ittwOEzKkG5aarI5T1ZL__ahFnkE_IPAMPRlyKxD3UHP1QZQmvDGSQqp2nXya/pub?gid=177067570&single=true&output=csv';
+
+  function loadCementStock() {
+    fetch(CEMENT_STOCK_SHEET_URL)
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.split('\n').slice(1);
+        let html = '<div style="display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 15px;">';
+      
+        rows.forEach((row, index) => {
+          const cols = row.split(',');
+          if (cols.length >= 2 && cols[0].trim()) {
+            const stock = parseFloat(cols[1]);
+            const isLow = stock < 20;
+            const bg = isLow ? 'linear-gradient(135deg, #ff6b6b, #ee5a5a)' : 'linear-gradient(135deg, #27ae60, #219150)';
+            const icon = isLow ? '⚠️' : '✅';
+          
+            html += '<div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; transition: transform 0.3s ease;">';
+            html += '<div style="font-size: 2em; margin-bottom: 10px;">' + icon + '</div>';
+            html += '<div style="font-size: 0.9em; color: #777; text-transform: uppercase; letter-spacing: 1px;">' + cols[0].trim() + '</div>';
+            html += '<div style="font-size: 2.5em; font-weight: bold; color: ' + (isLow ? '#e74c3c' : '#27ae60') + '; margin: 10px 0;">' + cols[1].trim() + '</div>';
+            html += '<div style="font-size: 0.8em; color: #999;">bags remaining</div>';
+            html += '<div style="font-size: 0.75em; color: #aaa; margin-top: 10px;">Updated: ' + (cols[2] ? cols[2].trim() : '-') + '</div>';
+            html += '</div>';
+          }
+        });
+        html += '</div>';
+      
+        // Add total
+        let totalStock = 0;
+        rows.forEach(row => {
+          const cols = row.split(',');
+          if (cols.length >= 2 && cols[0].trim()) {
+            totalStock += parseFloat(cols[1]) || 0;
+          }
+        });
+        html += '<div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; text-align: center;"><strong>Total: ' + totalStock.toFixed(1) + ' bags</strong></div>';
+      
+        document.getElementById('cement-stock-container').innerHTML = html;
+      })
+      .catch(err => {
+        document.getElementById('cement-stock-container').innerHTML = '<p style="color: red;">Error loading stock data</p>';
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCementStock);
   </script>
 </body>
 </html>
