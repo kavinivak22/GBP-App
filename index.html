@@ -420,8 +420,21 @@
   </button>
 </section>
 
-  <footer>
-    &copy; 2025 Guberaan Builders. All rights reserved.
+  <div id="secretAdminPanel" style="display: none; background: var(--white); margin: 20px auto; max-width: 90%; padding: 25px; border-radius: 16px; box-shadow: 0 6px 18px var(--shadow-light); text-align: center; border: 2px solid #25D366;">
+    <h3 style="margin-top: 0; color: #2c3e50;"><i class="fas fa-user-shield"></i> Admin Panel</h3>
+    <p style="font-size: 0.9em; color: #777; margin-bottom: 15px;">Push Daily Site Report to WhatsApp</p>
+    
+    <input type="date" id="waReportDate" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; width: 100%; max-width: 200px; font-family: 'Montserrat', sans-serif;">
+    <br>
+    
+    <button id="waPushBtn" onclick="pushToWhatsApp()" style="background-color: #25D366; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; width: 100%; max-width: 200px;">
+        <i class="fab fa-whatsapp"></i> <span id="waBtnText">Push Report</span>
+    </button>
+    <div id="waStatus" style="margin-top: 15px; font-size: 14px; font-weight: bold; display: none;"></div>
+  </div>
+
+  <footer id="secretTrigger" style="user-select: none; cursor: default;">
+    &copy; 2026 Guberaan Builders. All rights reserved.
   </footer>
 
   <script>
@@ -529,6 +542,90 @@
   }
 
   document.addEventListener('DOMContentLoaded', loadCementStock);
+  </script>
+
+  <script>
+    // --- 1. EASTER EGG LOGIC ---
+    let clickCount = 0;
+    let clickTimer;
+    
+    const footerTrigger = document.getElementById('secretTrigger');
+    const adminPanel = document.getElementById('secretAdminPanel');
+    const dateInput = document.getElementById('waReportDate');
+    
+    // Set default date to today
+    dateInput.valueAsDate = new Date();
+
+    footerTrigger.addEventListener('click', () => {
+        clickCount++;
+        clearTimeout(clickTimer);
+        
+        // Reset count if they stop clicking for 2 seconds
+        clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+
+        // If clicked 5 times quickly, toggle the hidden panel
+        if (clickCount >= 5) {
+            if (adminPanel.style.display === 'none') {
+                adminPanel.style.display = 'block';
+                // Scroll down smoothly to show it
+                adminPanel.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                adminPanel.style.display = 'none';
+            }
+            clickCount = 0; // Reset counter
+        }
+    });
+
+    // --- 2. WHATSAPP PUSH LOGIC ---
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIH8SaWdxZUEPkYd7TmlzLamlTLdNB8hqKpOUnmPEBcJl2tJXJ6G0p_vxP9mJ3vqLE/exec";
+
+    async function pushToWhatsApp() {
+        const btn = document.getElementById('waPushBtn');
+        const btnText = document.getElementById('waBtnText');
+        const statusDiv = document.getElementById('waStatus');
+        const targetDate = dateInput.value; 
+
+        // UI Loading State
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+        btn.style.cursor = "not-allowed";
+        btnText.innerText = "Sending...";
+        statusDiv.style.display = "none";
+
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ date: targetDate }), 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                statusDiv.innerText = "✅ Report sent successfully!";
+                statusDiv.style.color = "green";
+            } else {
+                statusDiv.innerText = "❌ Error: " + result.message;
+                statusDiv.style.color = "red";
+            }
+        } catch (error) {
+            statusDiv.innerText = "❌ Network error. Check your Web App URL.";
+            statusDiv.style.color = "red";
+            console.error(error);
+        } finally {
+            statusDiv.style.display = "block";
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+            btnText.innerText = "Push Report";
+            
+            // Hide the panel again after 5 seconds of success
+            setTimeout(() => {
+                statusDiv.style.display = "none";
+                adminPanel.style.display = 'none';
+            }, 5000);
+        }
+    }
   </script>
 </body>
 </html>
